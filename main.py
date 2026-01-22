@@ -255,13 +255,13 @@ async def courses_list(
 async def category_list(
     request: Request,
     category_slug: str,
-    level: Optional[str] = None,
-    format: Optional[str] = None,
-    price_min: Optional[int] = None,
-    price_max: Optional[int] = None,
-    sort: str = "popular",
-    query: Optional[str] = None,
-    page: int = 1,
+    query: Optional[str] = Query(None),
+    level: Optional[str] = Query(None),
+    format: Optional[str] = Query(None),
+    price_min: Optional[int] = Query(None),
+    price_max: Optional[int] = Query(None),
+    sort: str = Query("popular"),
+    page: int = Query(1, ge=1),
     db: Session = Depends(get_db)
 ):
     """Страница категории с фильтрами"""
@@ -272,20 +272,24 @@ async def category_list(
     )
     
     # Дополнительные фильтры
+    if query:
+        search_term = f"%{query}%"
+        db_query = db_query.filter(
+            (Course.title.ilike(search_term)) | 
+            (Course.tags.ilike(search_term))
+        )
+    
     if level and level != "all":
         db_query = db_query.filter(Course.level == level)
+    
     if format and format != "all":
         db_query = db_query.filter(Course.format == format)
+    
     if price_min is not None:
         db_query = db_query.filter(Course.price_from >= price_min)
+    
     if price_max is not None:
         db_query = db_query.filter(Course.price_from <= price_max)
-    if query:
-        search = f"%{query}%"
-        db_query = db_query.filter(
-            (Course.title.ilike(search)) | 
-            (Course.tags.ilike(search))
-        )
     
     # Сортировка
     if sort == "new":
@@ -300,21 +304,34 @@ async def category_list(
     # Пагинация
     per_page = 9
     total_courses = db_query.count()
-    total_pages = (total_courses + per_page - 1) // per_page
+    total_pages = (total_courses + per_page - 1) // per_page if total_courses > 0 else 1
     page = max(1, min(page, total_pages))
     
     courses = db_query.offset((page - 1) * per_page).limit(per_page).all()
     
+    # Название категории для отображения
+    category_names = {
+        "design": "Дизайн",
+        "video": "Видео",
+        "marketing": "Маркетинг",
+        "automation": "Автоматизация",
+        "coding": "Программирование",
+        "business": "Бизнес"
+    }
+    
+    category_name = category_names.get(category_slug, category_slug)
+    
     return templates.TemplateResponse("category.html", {
         "request": request,
         "courses": courses,
-        "current_category": category_slug,
+        "category_slug": category_slug,
+        "category_name": category_name,
+        "current_query": query,
         "current_level": level,
         "current_format": format,
         "current_price_min": price_min,
         "current_price_max": price_max,
         "current_sort": sort,
-        "current_query": query,
         "current_page": page,
         "total_pages": total_pages,
         "total_courses": total_courses
