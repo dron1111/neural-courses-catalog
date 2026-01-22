@@ -1,0 +1,132 @@
+{% extends "base.html" %}
+
+{% block title %}Админ-панель — Управление курсами{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto">
+    <!-- Заголовок и кнопка создания -->
+    <div class="flex justify-between items-center mb-8">
+        <div>
+            <h1 class="text-3xl font-bold text-gray-900">Управление курсами</h1>
+            <p class="text-gray-600 mt-2">Всего курсов: {{ total_courses }}. Страница {{ current_page }} из {{ total_pages }}</p>
+        </div>
+        <a href="/admin/course/new?token={{ token }}" class="bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 font-medium flex items-center">
+            <span class="mr-2">+</span> Создать курс
+        </a>
+    </div>
+
+    <!-- Таблица курсов -->
+    <div class="bg-white rounded-xl shadow overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Название</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Категория</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Уровень</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Цена</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Клики</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Статус</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Действия</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    {% for course in courses %}
+                    <tr class="hover:bg-gray-50">
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ course.id }}</td>
+                        <td class="px-6 py-4">
+                            <div class="text-sm font-medium text-gray-900">{{ course.title }}</div>
+                            <div class="text-sm text-gray-500">{{ course.provider }}</div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                {{ course.category_slug }}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ course.level }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ course.price_from }} ₽</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            <span class="font-medium">{{ course.clicks }}</span> кликов
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            {% if course.is_published %}
+                            <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                Опубликован
+                            </span>
+                            {% else %}
+                            <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                Черновик
+                            </span>
+                            {% endif %}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                            <a href="/admin/course/{{ course.id }}?token={{ token }}" class="text-blue-600 hover:text-blue-900 mr-4">Редактировать</a>
+                            <a href="/course/{{ course.slug }}" target="_blank" class="text-gray-600 hover:text-gray-900">Посмотреть</a>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="8" class="px-6 py-12 text-center text-gray-500">
+                            <div class="text-4xl mb-4">📚</div>
+                            <p class="text-lg">Курсы не найдены</p>
+                            <p class="mt-2">Создайте свой первый курс</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Пагинация -->
+    {% if total_pages > 1 %}
+    <div class="flex justify-between items-center mt-8">
+        <div>
+            {% if current_page > 1 %}
+            <a href="?token={{ token }}&page={{ current_page - 1 }}" class="px-5 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 font-medium">
+                ← Предыдущая
+            </a>
+            {% endif %}
+        </div>
+        
+        <div class="text-gray-700">
+            Страница <strong>{{ current_page }}</strong> из <strong>{{ total_pages }}</strong>
+        </div>
+        
+        <div>
+            {% if current_page < total_pages %}
+            <a href="?token={{ token }}&page={{ current_page + 1 }}" class="px-5 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 font-medium">
+                Следующая →
+            </a>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Статистика -->
+    <div class="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div class="bg-white p-6 rounded-xl shadow">
+            <h3 class="text-lg font-semibold text-gray-900 mb-2">Быстрые действия</h3>
+            <ul class="space-y-2">
+                <li><a href="/admin/course/new?token={{ token }}" class="text-blue-600 hover:text-blue-800">+ Создать новый курс</a></li>
+                <li><a href="/admin/courses?token={{ token }}&sort=new" class="text-blue-600 hover:text-blue-800">Показать новые курсы</a></li>
+                <li><a href="/admin/courses?token={{ token }}&is_published=false" class="text-blue-600 hover:text-blue-800">Показать черновики</a></li>
+            </ul>
+        </div>
+        
+        <div class="bg-white p-6 rounded-xl shadow">
+            <h3 class="text-lg font-semibold text-gray-900 mb-2">Статистика</h3>
+            <p class="text-gray-600">Всего курсов: <strong>{{ total_courses }}</strong></p>
+            <p class="text-gray-600 mt-1">Опубликовано: <strong class="text-green-600">{{ courses|selectattr('is_published')|list|length }}</strong></p>
+            <p class="text-gray-600 mt-1">Черновиков: <strong class="text-red-600">{{ courses|rejectattr('is_published')|list|length }}</strong></p>
+        </div>
+        
+        <div class="bg-white p-6 rounded-xl shadow">
+            <h3 class="text-lg font-semibold text-gray-900 mb-2">Справка</h3>
+            <p class="text-sm text-gray-600">Используйте токен для доступа к админке: <code class="bg-gray-100 px-2 py-1 rounded text-xs">{{ token[:10] }}...</code></p>
+            <p class="text-sm text-gray-600 mt-2">Все изменения сохраняются сразу в базу данных.</p>
+        </div>
+    </div>
+</div>
+{% endblock %}
