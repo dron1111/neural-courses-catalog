@@ -1,0 +1,188 @@
+{% extends "base.html" %}
+
+{% block title %}{% if is_new %}Создание курса{% else %}Редактирование: {{ course.title }}{% endif %} — Админ-панель{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto">
+    <!-- Заголовок -->
+    <div class="mb-8">
+        <h1 class="text-3xl font-bold text-gray-900">
+            {% if is_new %}
+            Создание нового курса
+            {% else %}
+            Редактирование курса: <span class="text-blue-600">{{ course.title }}</span>
+            {% endif %}
+        </h1>
+        <p class="text-gray-600 mt-2">Заполните все поля формы. Поле "slug" должно быть уникальным.</p>
+    </div>
+
+    <!-- Сообщение об ошибке -->
+    {% if error %}
+    <div class="bg-red-50 border-l-4 border-red-500 p-4 mb-6">
+        <div class="flex">
+            <div class="flex-shrink-0">
+                <span class="text-red-500">⚠️</span>
+            </div>
+            <div class="ml-3">
+                <p class="text-sm text-red-700">{{ error }}</p>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Форма -->
+    <div class="bg-white rounded-xl shadow-lg p-8">
+        <form method="post" action="{% if is_new %}/admin/course/new{% else %}/admin/course/{{ course.id }}{% endif %}">
+            <!-- Скрытый токен -->
+            <input type="hidden" name="token" value="{{ token }}">
+            
+            <!-- Основные поля (2 колонки) -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                <!-- Название -->
+                <div class="md:col-span-2">
+                    <label for="title" class="block text-sm font-medium text-gray-700 mb-2">Название курса *</label>
+                    <input type="text" id="title" name="title" value="{{ course.title if course else '' }}" required class="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    <p class="mt-1 text-sm text-gray-500">Полное название курса, которое увидят пользователи</p>
+                </div>
+                
+                <!-- Slug -->
+                <div>
+                    <label for="slug" class="block text-sm font-medium text-gray-700 mb-2">Slug (URL) *</label>
+                    <input type="text" id="slug" name="slug" value="{{ course.slug if course else '' }}" required class="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-mono">
+                    <p class="mt-1 text-sm text-gray-500">Только латинские буквы, цифры и дефисы</p>
+                </div>
+                
+                <!-- Провайдер -->
+                <div>
+                    <label for="provider" class="block text-sm font-medium text-gray-700 mb-2">Провайдер *</label>
+                    <input type="text" id="provider" name="provider" value="{{ course.provider if course else '' }}" required class="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    <p class="mt-1 text-sm text-gray-500">Название школы или платформы</p>
+                </div>
+                
+                <!-- Категория -->
+                <div>
+                    <label for="category_slug" class="block text-sm font-medium text-gray-700 mb-2">Категория *</label>
+                    <select id="category_slug" name="category_slug" required class="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        <option value="">Выберите категорию</option>
+                        <option value="design" {% if course and course.category_slug == 'design' %}selected{% endif %}>Design</option>
+                        <option value="video" {% if course and course.category_slug == 'video' %}selected{% endif %}>Video</option>
+                        <option value="marketing" {% if course and course.category_slug == 'marketing' %}selected{% endif %}>Marketing</option>
+                        <option value="automation" {% if course and course.category_slug == 'automation' %}selected{% endif %}>Automation</option>
+                        <option value="coding" {% if course and course.category_slug == 'coding' %}selected{% endif %}>Coding</option>
+                        <option value="business" {% if course and course.category_slug == 'business' %}selected{% endif %}>Business</option>
+                    </select>
+                </div>
+                
+                <!-- Уровень -->
+                <div>
+                    <label for="level" class="block text-sm font-medium text-gray-700 mb-2">Уровень *</label>
+                    <select id="level" name="level" required class="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        <option value="">Выберите уровень</option>
+                        <option value="beginner" {% if course and course.level == 'beginner' %}selected{% endif %}>Beginner</option>
+                        <option value="middle" {% if course and course.level == 'middle' %}selected{% endif %}>Middle</option>
+                        <option value="pro" {% if course and course.level == 'pro' %}selected{% endif %}>Pro</option>
+                    </select>
+                </div>
+                
+                <!-- Формат -->
+                <div>
+                    <label for="format" class="block text-sm font-medium text-gray-700 mb-2">Формат *</label>
+                    <select id="format" name="format" required class="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        <option value="">Выберите формат</option>
+                        <option value="online" {% if course and course.format == 'online' %}selected{% endif %}>Online</option>
+                        <option value="offline" {% if course and course.format == 'offline' %}selected{% endif %}>Offline</option>
+                        <option value="mixed" {% if course and course.format == 'mixed' %}selected{% endif %}>Mixed</option>
+                    </select>
+                </div>
+                
+                <!-- Цена -->
+                <div>
+                    <label for="price_from" class="block text-sm font-medium text-gray-700 mb-2">Цена (от) *</label>
+                    <input type="number" id="price_from" name="price_from" value="{{ course.price_from if course else '' }}" min="0" step="100" required class="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    <p class="mt-1 text-sm text-gray-500">Цена в рублях</p>
+                </div>
+                
+                <!-- Длительность -->
+                <div>
+                    <label for="duration" class="block text-sm font-medium text-gray-700 mb-2">Длительность *</label>
+                    <input type="text" id="duration" name="duration" value="{{ course.duration if course else '' }}" required class="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="4 недели">
+                </div>
+            </div>
+            
+            <!-- Полноширинные поля -->
+            <div class="space-y-6 mb-8">
+                <!-- Теги -->
+                <div>
+                    <label for="tags" class="block text-sm font-medium text-gray-700 mb-2">Теги</label>
+                    <input type="text" id="tags" name="tags" value="{{ course.tags if course else '' }}" class="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="ai, python, ml, data science">
+                    <p class="mt-1 text-sm text-gray-500">Перечислите теги через запятую. По ним будет работать поиск.</p>
+                </div>
+                
+                <!-- Краткое описание -->
+                <div>
+                    <label for="short_desc" class="block text-sm font-medium text-gray-700 mb-2">Краткое описание *</label>
+                    <textarea id="short_desc" name="short_desc" rows="3" required class="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">{{ course.short_desc if course else '' }}</textarea>
+                    <p class="mt-1 text-sm text-gray-500">Краткое описание для карточки курса (максимум 200 символов)</p>
+                </div>
+                
+                <!-- Партнерская ссылка -->
+                <div>
+                    <label for="affiliate_url" class="block text-sm font-medium text-gray-700 mb-2">Партнерская ссылка *</label>
+                    <input type="url" id="affiliate_url" name="affiliate_url" value="{{ course.affiliate_url if course else '' }}" required class="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="https://example.com/aff/...">
+                    <p class="mt-1 text-sm text-gray-500">Ссылка для редиректа через /out/[slug]</p>
+                </div>
+            </div>
+            
+            <!-- Чекбокс публикации -->
+            <div class="flex items-center mb-10">
+                <input type="checkbox" id="is_published" name="is_published" value="true" {% if course and course.is_published %}checked{% endif %} class="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
+                <label for="is_published" class="ml-3 text-sm font-medium text-gray-700">
+                    Опубликовать курс (сделать видимым в каталоге)
+                </label>
+            </div>
+            
+            <!-- Кнопки отправки -->
+            <div class="flex justify-between pt-6 border-t border-gray-200">
+                <div>
+                    <a href="/admin/courses?token={{ token }}" class="px-6 py-3 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 font-medium">
+                        ← Назад к списку
+                    </a>
+                </div>
+                <div class="space-x-4">
+                    {% if not is_new %}
+                    <a href="/course/{{ course.slug }}" target="_blank" class="px-6 py-3 border border-blue-300 rounded-lg text-blue-600 hover:bg-blue-50 font-medium">
+                        Посмотреть на сайте
+                    </a>
+                    {% endif %}
+                    <button type="submit" class="bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700 font-medium">
+                        {% if is_new %}
+                        Создать курс
+                        {% else %}
+                        Сохранить изменения
+                        {% endif %}
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+    
+    <!-- Подсказки -->
+    <div class="mt-8 bg-blue-50 border border-blue-200 rounded-xl p-6">
+        <h3 class="text-lg font-semibold text-blue-900 mb-3">📌 Подсказки по заполнению</h3>
+        <ul class="space-y-2 text-blue-800">
+            <li class="flex items-start">
+                <span class="mr-2">•</span>
+                <span><strong>Slug</strong> — часть URL (например, "python-ml-basics"). Должен быть уникальным и не содержать пробелов.</span>
+            </li>
+            <li class="flex items-start">
+                <span class="mr-2">•</span>
+                <span><strong>Теги</strong> — важны для поиска. Добавьте 3-5 ключевых слов через запятую.</span>
+            </li>
+            <li class="flex items-start">
+                <span class="mr-2">•</span>
+                <span>Если не поставить галочку "Опубликовать", курс будет виден только в админке.</span>
+            </li>
+        </ul>
+    </div>
+</div>
+{% endblock %}
