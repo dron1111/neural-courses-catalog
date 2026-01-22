@@ -694,7 +694,201 @@ async def api_admin_courses_list(
             for c in courses
         ]
     }
+# ================== АДМИНКА ==================
 
+def check_admin_token(token: str):
+    """Проверка токена админки (самая простая защита)"""
+    if token != ADMIN_TOKEN:
+        raise HTTPException(status_code=403, detail="Неверный токен админки")
+
+@app.get("/admin/courses", response_class=HTMLResponse)
+async def admin_courses_list(
+    request: Request,
+    token: str = Query(...),
+    page: int = Query(1, ge=1),
+    db: Session = Depends(get_db)
+):
+    """Список всех курсов в админке"""
+    check_admin_token(token)
+    
+    # Пагинация
+    per_page = 20
+    db_query = db.query(Course).order_by(Course.created_at.desc())
+    total = db_query.count()
+    total_pages = (total + per_page - 1) // per_page if total > 0 else 1
+    page = max(1, min(page, total_pages))
+    
+    courses = db_query.offset((page - 1) * per_page).limit(per_page).all()
+    
+    return templates.TemplateResponse("admin/courses.html", {
+        "request": request,
+        "courses": courses,
+        "token": token,
+        "current_page": page,
+        "total_pages": total_pages,
+        "total_courses": total
+    })
+
+@app.get("/admin/course/new", response_class=HTMLResponse)
+async def admin_course_new_form(request: Request, token: str = Query(...)):
+    """Форма создания нового курса"""
+    check_admin_token(token)
+    
+    return templates.TemplateResponse("admin/course_form.html", {
+        "request": request,
+        "course": None,
+        "token": token,
+        "is_new": True
+    })
+
+@app.post("/admin/course/new")
+async def admin_course_create(
+    request: Request,
+    token: str = Form(...),
+    title: str = Form(...),
+    slug: str = Form(...),
+    provider: str = Form(...),
+    category_slug: str = Form(...),
+    level: str = Form(...),
+    format: str = Form(...),
+    price_from: int = Form(...),
+    duration: str = Form(...),
+    tags: str = Form(...),
+    short_desc: str = Form(...),
+    affiliate_url: str = Form(...),
+    is_published: bool = Form(False),
+    db: Session = Depends(get_db)
+):
+    """Создание нового курса"""
+    check_admin_token(token)
+    
+    # Проверяем уникальность slug
+    existing = db.query(Course).filter(Course.slug == slug).first()
+    if existing:
+        return templates.TemplateResponse("admin/course_form.html", {
+            "request": request,
+            "course": None,
+            "token": token,
+            "is_new": True,
+            "error": "Курс с таким URL-адресом (slug) уже существует"
+        })
+    
+    # Создаем курс
+    course = Course(
+        slug=slug,
+        title=title,
+        provider=provider,
+        category_slug=category_slug,
+        level=level,
+        format=format,
+        price_from=price_from,
+        duration=duration,
+        tags=tags,
+        short_desc=short_desc,
+        affiliate_url=affiliate_url,
+        is_published=is_published
+    )
+    
+    db.add(course)
+    db.commit()
+    
+    # Редирект на список курсов
+    return RedirectResponse(f"/admin/courses?token={token}", status_code=303)
+
+@app.get("/admin/course/{course_id}", response_class=HTMLResponse)
+async def admin_course_edit_form(
+    request: Request,
+    course_id: int,
+    token: str = Query(...),
+    db: Session = Depends(get_db)
+):
+    """Форма редактирования курса"""
+    check_admin_token(token)
+    
+    course = db.query(Course).filter(Course.id == course_id).first()
+    
+    if not course:
+        raise HTTPException(status_code=404, detail="Курс не найден")
+    
+    return templates.TemplateResponse("admin/course_form.html", {
+        "request": request,
+        "course": course,
+        "token": token,
+        "is_new": False
+    })
+
+@app.post("/admin/course/{course_id}")
+async def admin_course_update(
+    request: Request,
+    course_id: int,
+    token: str = Form(...),
+    title: str = Form(...),
+    slug: str = Form(...),
+    provider: str = Form(...),
+    category_slug: str = Form(...),
+    level: str = Form(...),
+    format: str = Form(...),
+    price_from: int = Form(...),
+    duration: str = Form(...),
+    tags: str = Form(...),
+    short_desc: str = Form(...),
+    affiliate_url: str = Form(...),
+    is_published: bool = Form(False),
+    db: Session = Depends(get_db)
+):
+    """Обновление курса"""
+    check_admin_token(token)
+    
+    course = db.query(Course).filter(Course.id == course_id).first()
+    
+    if not course:
+        raise HTTPException(status_code=404, detail="Курс не найден")
+    
+    # Проверяем slug на уникальность (кроме текущего курса)
+    existing = db.query(Course).filter(Course.slug == slug, Course.id != course_id).first()
+    if existing:
+        return templates.TemplateResponse("admin/course_form.html", {
+            "request": request,
+            "course": course,
+            "token": token,
+            "is_new": False,
+            "error": "Курс с таким URL-адресом (slug) уже существует"
+        })
+    
+    # Обновляем поля
+    course.slug = slug
+    course.title = title
+    course.provider = provider
+    course.category_slug = category_slug
+    course.level = level
+    course.format = format
+    course.price_from = price_from
+    course.duration = duration
+    course.tags = tags
+    course.short_desc = short_desc
+    course.affiliate_url = affiliate_url
+    course.is_published = is_published
+    
+    db.commit()
+    
+    return RedirectResponse(f"/admin/courses?token={token}", status_code=303)
+
+@app.get("/admin/delete/{course_id}")
+async def admin_course_delete(
+    course_id: int,
+    token: str = Query(...),
+    db: Session = Depends(get_db)
+):
+    """Удаление курса (опционально)"""
+    check_admin_token(token)
+    
+    course = db.query(Course).filter(Course.id == course_id).first()
+    
+    if course:
+        db.delete(course)
+        db.commit()
+    
+    return RedirectResponse(f"/admin/courses?token={token}")
 # ================== ЗАПУСК ==================
 
 if __name__ == "__main__":
