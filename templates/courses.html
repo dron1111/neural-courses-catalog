@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="mb-8">
+    <h1 class="text-3xl font-bold mb-4">Все курсы по нейросетям</h1>
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {% for course in courses %}
+        <div class="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow">
+            <div class="mb-4">
+                <span class="inline-block bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full">
+                    {{ course.category_slug }}
+                </span>
+                <span class="inline-block bg-gray-100 text-gray-800 text-xs px-2 py-1 rounded-full ml-2">
+                    {{ course.level }}
+                </span>
+            </div>
+            <h3 class="text-xl font-semibold mb-2">{{ course.title }}</h3>
+            <p class="text-gray-600 mb-4">{{ course.short_desc }}</p>
+            <div class="flex justify-between items-center">
+                <div>
+                    <span class="text-2xl font-bold text-blue-600">{{ course.price_from }} ₽</span>
+                    <span class="text-gray-500 ml-2">{{ course.duration }}</span>
+                </div>
+                <a href="/course/{{ course.slug }}" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+                    Подробнее
+                </a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
