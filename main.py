@@ -390,18 +390,21 @@ async def redirect_out(
     
     return RedirectResponse(course.affiliate_url, status_code=302)
 
-# ================== API РОУТЫ ==================
+
+
+# ================== API ЭНДПОИНТЫ ==================
 
 @app.get("/api/courses")
 async def api_courses_list(
-    category: Optional[str] = None,
-    level: Optional[str] = None,
-    format: Optional[str] = None,
-    price_min: Optional[int] = None,
-    price_max: Optional[int] = None,
-    sort: str = "popular",
-    query: Optional[str] = None,
-    page: int = 1,
+    category: Optional[str] = Query(None),
+    level: Optional[str] = Query(None),
+    format: Optional[str] = Query(None),
+    price_min: Optional[int] = Query(None),
+    price_max: Optional[int] = Query(None),
+    sort: str = Query("popular"),
+    query: Optional[str] = Query(None),
+    page: int = Query(1, ge=1),
+    per_page: int = Query(10, ge=1, le=100),
     db: Session = Depends(get_db)
 ):
     """API для получения списка курсов"""
@@ -409,14 +412,19 @@ async def api_courses_list(
     
     if category and category != "all":
         db_query = db_query.filter(Course.category_slug == category)
+    
     if level and level != "all":
         db_query = db_query.filter(Course.level == level)
+    
     if format and format != "all":
         db_query = db_query.filter(Course.format == format)
+    
     if price_min is not None:
         db_query = db_query.filter(Course.price_from >= price_min)
+    
     if price_max is not None:
         db_query = db_query.filter(Course.price_from <= price_max)
+    
     if query:
         search = f"%{query}%"
         db_query = db_query.filter(
@@ -433,9 +441,8 @@ async def api_courses_list(
     else:
         db_query = db_query.order_by(Course.clicks.desc())
     
-    per_page = 10
     total = db_query.count()
-    total_pages = (total + per_page - 1) // per_page
+    total_pages = (total + per_page - 1) // per_page if total > 0 else 1
     page = max(1, min(page, total_pages))
     
     courses = db_query.offset((page - 1) * per_page).limit(per_page).all()
@@ -456,7 +463,9 @@ async def api_courses_list(
                 "level": c.level,
                 "format": c.format,
                 "category_slug": c.category_slug,
-                "clicks": c.clicks
+                "clicks": c.clicks,
+                "short_desc": c.short_desc,
+                "tags": c.tags.split(",") if c.tags else []
             }
             for c in courses
         ]
