@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Каталог курсов{% endblock %}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50">
+    <nav class="bg-white shadow-lg">
+        <div class="container mx-auto px-4">
+            <div class="flex justify-between items-center py-4">
+                <a href="/" class="text-2xl font-bold text-blue-600">AI Courses</a>
+                <div class="space-x-4">
+                    <a href="/" class="text-gray-700 hover:text-blue-600">Главная</a>
+                    <a href="/courses" class="text-gray-700 hover:text-blue-600">Каталог</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+    
+    <main class="container mx-auto px-4 py-8">
+        {% block content %}{% endblock %}
+    </main>
+</body>
+</html>
