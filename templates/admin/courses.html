@@ -1,192 +1,107 @@
 {% extends "base.html" %}
 
-{% block title %}Каталог курсов по нейросетям{% endblock %}
-{% block description %}Найдите лучшие курсы по AI, машинному обучению и нейросетям. Фильтры по категории, уровню, формату и цене.{% endblock %}
+{% block title %}Админ-панель — Управление курсами{% endblock %}
 
 {% block content %}
-<div class="mb-8">
-    <!-- Заголовок и статистика -->
-    <div class="mb-8">
-        <h1 class="text-3xl font-bold mb-2">Каталог курсов по нейросетям</h1>
-        <p class="text-gray-600">Найдено курсов: <strong>{{ total_courses }}</strong></p>
+<div class="max-w-7xl mx-auto">
+    <!-- Заголовок и кнопка создания -->
+    <div class="flex justify-between items-center mb-8">
+        <div>
+            <h1 class="text-3xl font-bold text-gray-900">Управление курсами</h1>
+            <p class="text-gray-600 mt-2">Всего курсов: {{ total_courses }}. Страница {{ current_page }} из {{ total_pages }}</p>
+        </div>
+        <a href="/admin/course/new?token={{ token }}" class="bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 font-medium flex items-center">
+            <span class="mr-2">+</span> Создать курс
+        </a>
     </div>
 
-    <!-- ФИЛЬТРЫ И ПОИСК -->
-    <div class="bg-white p-6 rounded-xl shadow-lg mb-8">
-        <form method="get" class="space-y-6">
-            <!-- Поиск -->
-            <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">Поиск по названию, тегам или описанию</label>
-                <input type="text" name="query" value="{{ current_query or '' }}" 
-                       placeholder="Например: python, дизайн, маркетинг..." 
-                       class="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-            </div>
-
-            <!-- Фильтры в сетке -->
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                <!-- Категория -->
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Категория</label>
-                    <select name="category" class="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                        <option value="all">Все категории</option>
-                        {% for cat in available_categories %}
-                        <option value="{{ cat }}" {% if current_category == cat %}selected{% endif %}>{{ cat }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-
-                <!-- Уровень -->
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Уровень</label>
-                    <select name="level" class="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                        <option value="all">Все уровни</option>
-                        <option value="beginner" {% if current_level == 'beginner' %}selected{% endif %}>Начинающий</option>
-                        <option value="middle" {% if current_level == 'middle' %}selected{% endif %}>Средний</option>
-                        <option value="pro" {% if current_level == 'pro' %}selected{% endif %}>Профессионал</option>
-                    </select>
-                </div>
-
-                <!-- Формат -->
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Формат</label>
-                    <select name="format" class="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                        <option value="all">Все форматы</option>
-                        <option value="online" {% if current_format == 'online' %}selected{% endif %}>Онлайн</option>
-                        <option value="offline" {% if current_format == 'offline' %}selected{% endif %}>Офлайн</option>
-                        <option value="mixed" {% if current_format == 'mixed' %}selected{% endif %}>Смешанный</option>
-                    </select>
-                </div>
-
-                <!-- Сортировка -->
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Сортировка</label>
-                    <select name="sort" class="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                        <option value="popular" {% if current_sort == 'popular' %}selected{% endif %}>По популярности</option>
-                        <option value="new" {% if current_sort == 'new' %}selected{% endif %}>Сначала новые</option>
-                        <option value="price_asc" {% if current_sort == 'price_asc' %}selected{% endif %}>Сначала дешевле</option>
-                        <option value="price_desc" {% if current_sort == 'price_desc' %}selected{% endif %}>Сначала дороже</option>
-                    </select>
-                </div>
-            </div>
-
-            <!-- Диапазон цен -->
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Минимальная цена</label>
-                    <input type="number" name="price_min" value="{{ current_price_min or '' }}" 
-                           min="0" max="{{ price_range.max }}" step="1000"
-                           placeholder="От 0"
-                           class="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Максимальная цена</label>
-                    <input type="number" name="price_max" value="{{ current_price_max or '' }}" 
-                           min="0" max="{{ price_range.max }}" step="1000"
-                           placeholder="До {{ price_range.max }}"
-                           class="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                </div>
-            </div>
-
-            <!-- Кнопки -->
-            <div class="flex flex-wrap gap-4 pt-2">
-                <button type="submit" class="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 font-medium flex items-center">
-                    <span class="mr-2">🔍</span> Применить фильтры
-                </button>
-                <a href="/courses" class="border border-gray-300 text-gray-700 px-6 py-3 rounded-lg hover:bg-gray-50 font-medium flex items-center">
-                    <span class="mr-2">↺</span> Сбросить всё
-                </a>
-                <div class="ml-auto text-gray-500 text-sm">
-                    Страница {{ current_page }} из {{ total_pages }}
-                </div>
-            </div>
-        </form>
-    </div>
-
-    <!-- СПИСОК КУРСОВ -->
-    {% if courses %}
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-        {% for course in courses %}
-        <div class="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-xl transition-shadow duration-300">
-            <div class="p-6">
-                <!-- Бейджи категории и уровня -->
-                <div class="flex justify-between items-start mb-4">
-                    <div>
-                        <span class="inline-block bg-blue-100 text-blue-800 text-xs font-semibold px-3 py-1 rounded-full">{{ course.category_slug }}</span>
-                        <span class="inline-block bg-gray-100 text-gray-800 text-xs font-semibold px-3 py-1 rounded-full ml-2">{{ course.level }}</span>
-                    </div>
-                    <span class="text-2xl font-bold text-blue-600">{{ course.price_from }} ₽</span>
-                </div>
-                
-                <!-- Название курса -->
-                <h3 class="text-xl font-bold mb-3 hover:text-blue-600">
-                    <a href="/course/{{ course.slug }}">{{ course.title }}</a>
-                </h3>
-                
-                <!-- Краткое описание -->
-                <p class="text-gray-600 mb-4 line-clamp-2">{{ course.short_desc }}</p>
-                
-                <!-- Теги -->
-                <div class="mb-4 flex flex-wrap gap-1">
-                    {% for tag in (course.tags or '').split(',')[:3] %}
-                    {% if tag %}
-                    <span class="inline-block bg-gray-100 text-gray-600 text-xs px-2 py-1 rounded">{{ tag }}</span>
-                    {% endif %}
+    <!-- Таблица курсов -->
+    <div class="bg-white rounded-xl shadow overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Название</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Категория</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Уровень</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Цена</th>
+                        <th scope="col" class="px6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Клики</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Статус</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Действия</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    {% for course in courses %}
+                    <tr class="hover:bg-gray-50">
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ course.id }}</td>
+                        <td class="px-6 py-4">
+                            <div class="text-sm font-medium text-gray-900">{{ course.title }}</div>
+                            <div class="text-sm text-gray-500">{{ course.provider }}</div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                {{ course.category_slug }}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ course.level }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ course.price_from }} ₽</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            <span class="font-medium">{{ course.clicks }}</span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            {% if course.is_published %}
+                            <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                Опубликован
+                            </span>
+                            {% else %}
+                            <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                Черновик
+                            </span>
+                            {% endif %}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
+                            <a href="/admin/course/{{ course.id }}?token={{ token }}" class="text-blue-600 hover:text-blue-900">✏️</a>
+                            <a href="/course/{{ course.slug }}" target="_blank" class="text-green-600 hover:text-green-900">👁️</a>
+                            <a href="/admin/delete/{{ course.id }}?token={{ token }}" onclick="return confirm('Удалить курс?')" class="text-red-600 hover:text-red-900">🗑️</a>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="8" class="px-6 py-12 text-center text-gray-500">
+                            <div class="text-4xl mb-4">📚</div>
+                            <p class="text-lg">Курсы не найдены</p>
+                            <p class="mt-2">Создайте свой первый курс</p>
+                        </td>
+                    </tr>
                     {% endfor %}
-                </div>
-                
-                <!-- Футер карточки -->
-                <div class="flex justify-between items-center pt-4 border-t border-gray-100">
-                    <div class="text-gray-500 text-sm">
-                        <span class="mr-3">👁 {{ course.clicks }} кликов</span>
-                        <span>{{ course.duration }}</span>
-                    </div>
-                    <a href="/course/{{ course.slug }}" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 font-medium">
-                        Подробнее →
-                    </a>
-                </div>
-            </div>
+                </tbody>
+            </table>
         </div>
-        {% endfor %}
     </div>
-    {% else %}
-    <!-- Если курсы не найдены -->
-    <div class="text-center py-12">
-        <div class="text-gray-400 text-6xl mb-4">🔍</div>
-        <h3 class="text-xl font-semibold text-gray-700 mb-2">Курсы не найдены</h3>
-        <p class="text-gray-500 mb-6">Попробуйте изменить параметры поиска или фильтры</p>
-        <a href="/courses" class="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 font-medium">
-            Сбросить фильтры
-        </a>
-    </div>
-    {% endif %}
 
-    <!-- ПАГИНАЦИЯ -->
+    <!-- Пагинация -->
     {% if total_pages > 1 %}
-    <div class="flex justify-center items-center space-x-2 mt-8">
-        {% if current_page > 1 %}
-        <a href="?page={{ current_page - 1 }}{% if current_query %}&query={{ current_query }}{% endif %}{% if current_category %}&category={{ current_category }}{% endif %}{% if current_sort %}&sort={{ current_sort }}{% endif %}" 
-           class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 font-medium">
-            ← Назад
-        </a>
-        {% endif %}
-        
-        <div class="flex space-x-1">
-            {% for p in range(1, total_pages + 1) %}
-                {% if p == current_page %}
-                <span class="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium">{{ p }}</span>
-                {% elif p >= current_page - 2 and p <= current_page + 2 %}
-                <a href="?page={{ p }}{% if current_query %}&query={{ current_query }}{% endif %}{% if current_category %}&category={{ current_category }}{% endif %}{% if current_sort %}&sort={{ current_sort }}{% endif %}" 
-                   class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">{{ p }}</a>
-                {% endif %}
-            {% endfor %}
+    <div class="flex justify-between items-center mt-8">
+        <div>
+            {% if current_page > 1 %}
+            <a href="?token={{ token }}&page={{ current_page - 1 }}" class="px-5 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 font-medium">
+                ← Предыдущая
+            </a>
+            {% endif %}
         </div>
         
-        {% if current_page < total_pages %}
-        <a href="?page={{ current_page + 1 }}{% if current_query %}&query={{ current_query }}{% endif %}{% if current_category %}&category={{ current_category }}{% endif %}{% if current_sort %}&sort={{ current_sort }}{% endif %}" 
-           class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 font-medium">
-            Далее →
-        </a>
-        {% endif %}
+        <div class="text-gray-700">
+            Страница <strong>{{ current_page }}</strong> из <strong>{{ total_pages }}</strong>
+        </div>
+        
+        <div>
+            {% if current_page < total_pages %}
+            <a href="?token={{ token }}&page={{ current_page + 1 }}" class="px-5 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 font-medium">
+                Следующая →
+            </a>
+            {% endif %}
+        </div>
     </div>
     {% endif %}
 </div>
