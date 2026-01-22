@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+
+{% block title %}Курсы по теме «{{ current_category }}» — Каталог курсов по нейросетям{% endblock %}
+{% block description %}Все курсы по теме «{{ current_category }}». Фильтры по уровню, формату и цене.{% endblock %}
+
+{% block content %}
+<div class="mb-8">
+    <!-- Заголовок и описание категории -->
+    <h1 class="text-3xl font-bold mb-2">Курсы: <span class="capitalize">{{ current_category }}</span></h1>
+    <p class="text-gray-600 mb-6">Найдено курсов: <strong>{{ total_courses }}</strong>. Используйте фильтры для уточнения.</p>
+
+    <!-- Блок фильтров и сортировки -->
+    <div class="bg-white p-6 rounded-lg shadow mb-6">
+        <form method="get" class="space-y-4 md:space-y-0 md:grid md:grid-cols-4 md:gap-4">
+            <!-- Уровень -->
+            <select name="level" class="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                <option value="all" {% if not current_level %}selected{% endif %}>Все уровни</option>
+                <option value="beginner" {% if current_level == 'beginner' %}selected{% endif %}>Начинающий</option>
+                <option value="middle" {% if current_level == 'middle' %}selected{% endif %}>Средний</option>
+                <option value="pro" {% if current_level == 'pro' %}selected{% endif %}>Профессионал</option>
+            </select>
+            
+            <!-- Формат -->
+            <select name="format" class="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                <option value="all" {% if not current_format %}selected{% endif %}>Любой формат</option>
+                <option value="online" {% if current_format == 'online' %}selected{% endif %}>Онлайн</option>
+                <option value="offline" {% if current_format == 'offline' %}selected{% endif %}>Офлайн</option>
+                <option value="mixed" {% if current_format == 'mixed' %}selected{% endif %}>Смешанный</option>
+            </select>
+            
+            <!-- Сортировка -->
+            <select name="sort" class="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                <option value="popular" {% if current_sort == 'popular' %}selected{% endif %}>По популярности</option>
+                <option value="new" {% if current_sort == 'new' %}selected{% endif %}>Сначала новые</option>
+                <option value="price_asc" {% if current_sort == 'price_asc' %}selected{% endif %}>Сначала дешевле</option>
+                <option value="price_desc" {% if current_sort == 'price_desc' %}selected{% endif %}>Сначала дороже</option>
+            </select>
+            
+            <div class="space-x-2">
+                <button type="submit" class="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 font-medium w-full md:w-auto">
+                    Применить
+                </button>
+                <a href="/category/{{ current_category }}" class="inline-block border border-gray-300 text-gray-700 px-6 py-3 rounded-lg hover:bg-gray-50 font-medium text-center w-full md:w-auto">
+                    Сбросить
+                </a>
+            </div>
+        </form>
+        
+        <!-- Поиск внутри категории -->
+        <div class="mt-4">
+            <form method="get" class="flex">
+                <input type="text" name="query" value="{{ current_query or '' }}" placeholder="Поиск по названию или тегам..." class="flex-grow border border-gray-300 rounded-l-lg p-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                <button type="submit" class="bg-gray-800 text-white px-6 py-3 rounded-r-lg hover:bg-gray-900">
+                    Найти
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Список курсов -->
+    {% if courses %}
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+        {% for course in courses %}
+        <div class="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-xl transition-shadow duration-300">
+            <div class="p-6">
+                <div class="flex justify-between items-start mb-4">
+                    <div>
+                        <span class="inline-block bg-blue-100 text-blue-800 text-xs font-semibold px-3 py-1 rounded-full">{{ course.category_slug }}</span>
+                        <span class="inline-block bg-gray-100 text-gray-800 text-xs font-semibold px-3 py-1 rounded-full ml-2">{{ course.level }}</span>
+                    </div>
+                    <span class="text-2xl font-bold text-blue-600">{{ course.price_from }} ₽</span>
+                </div>
+                
+                <h3 class="text-xl font-bold mb-3">{{ course.title }}</h3>
+                <p class="text-gray-600 mb-4">{{ course.short_desc|truncate(100) }}</p>
+                
+                <div class="flex justify-between items-center mt-4">
+                    <span class="text-gray-500">{{ course.duration }}</span>
+                    <a href="/course/{{ course.slug }}" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 font-medium">
+                        Подробнее →
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="text-center py-12">
+        <div class="text-gray-400 text-6xl mb-4">🔍</div>
+        <h3 class="text-xl font-semibold text-gray-700 mb-2">Курсы не найдены</h3>
+        <p class="text-gray-500 mb-6">Попробуйте изменить параметры фильтрации</p>
+        <a href="/category/{{ current_category }}" class="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 font-medium">
+            Сбросить фильтры
+        </a>
+    </div>
+    {% endif %}
+
+    <!-- Пагинация -->
+    {% if total_pages > 1 %}
+    <div class="flex justify-center items-center space-x-2">
+        {% if current_page > 1 %}
+        <a href="?page={{ current_page - 1 }}{% if current_level %}&level={{ current_level }}{% endif %}{% if current_format %}&format={{ current_format }}{% endif %}{% if current_sort %}&sort={{ current_sort }}{% endif %}" class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">
+            ← Назад
+        </a>
+        {% endif %}
+        
+        <span class="px-4 py-2 text-gray-700">
+            Страница {{ current_page }} из {{ total_pages }}
+        </span>
+        
+        {% if current_page < total_pages %}
+        <a href="?page={{ current_page + 1 }}{% if current_level %}&level={{ current_level }}{% endif %}{% if current_format %}&format={{ current_format }}{% endif %}{% if current_sort %}&sort={{ current_sort }}{% endif %}" class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">
+            Далее →
+        </a>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
