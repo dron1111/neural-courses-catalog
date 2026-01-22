@@ -80,8 +80,7 @@ Base.metadata.create_all(bind=engine)
 app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
 
-# Секретный токен для админки (задайте в переменных окружения)
-ADMIN_TOKEN = os.getenv("ADMIN_TOKEN", "secret-admin-token-123")
+ADMIN_TOKEN = os.getenv("ADMIN_TOKEN")
 
 # ================== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ==================
 def add_test_data():
