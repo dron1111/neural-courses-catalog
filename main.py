@@ -169,70 +169,86 @@ async def home(request: Request, db: Session = Depends(get_db)):
 @app.get("/courses", response_class=HTMLResponse)
 async def courses_list(
     request: Request,
-    category: Optional[str] = None,
-    level: Optional[str] = None,
-    format: Optional[str] = None,
-    price_min: Optional[int] = None,
-    price_max: Optional[int] = None,
-    sort: str = "popular",
-    query: Optional[str] = None,
-    page: int = 1,
+    query: Optional[str] = Query(None),
+    category: Optional[str] = Query(None),
+    level: Optional[str] = Query(None),
+    format: Optional[str] = Query(None),
+    price_min: Optional[int] = Query(None),
+    price_max: Optional[int] = Query(None),
+    sort: str = Query("popular"),
+    page: int = Query(1, ge=1),
     db: Session = Depends(get_db)
 ):
-    """Каталог курсов с фильтрами, сортировкой и пагинацией"""
+    """Каталог курсов с фильтрами, поиском и сортировкой"""
     # Базовый запрос
     db_query = db.query(Course).filter(Course.is_published == True)
     
-    # Применяем фильтры
-    if category and category != "all":
-        db_query = db_query.filter(Course.category_slug == category)
-    if level and level != "all":
-        db_query = db_query.filter(Course.level == level)
-    if format and format != "all":
-        db_query = db_query.filter(Course.format == format)
-    if price_min is not None:
-        db_query = db_query.filter(Course.price_from >= price_min)
-    if price_max is not None:
-        db_query = db_query.filter(Course.price_from <= price_max)
+    # ПРИМЕНЕНИЕ ФИЛЬТРОВ
     if query:
-        search = f"%{query}%"
+        search_term = f"%{query}%"
         db_query = db_query.filter(
-            (Course.title.ilike(search)) | 
-            (Course.tags.ilike(search)) |
-            (Course.short_desc.ilike(search))
+            (Course.title.ilike(search_term)) | 
+            (Course.tags.ilike(search_term)) |
+            (Course.short_desc.ilike(search_term))
         )
     
-    # Применяем сортировку
+    if category and category != "all":
+        db_query = db_query.filter(Course.category_slug == category)
+    
+    if level and level != "all":
+        db_query = db_query.filter(Course.level == level)
+    
+    if format and format != "all":
+        db_query = db_query.filter(Course.format == format)
+    
+    if price_min is not None:
+        db_query = db_query.filter(Course.price_from >= price_min)
+    
+    if price_max is not None:
+        db_query = db_query.filter(Course.price_from <= price_max)
+    
+    # ПРИМЕНЕНИЕ СОРТИРОВКИ
     if sort == "new":
         db_query = db_query.order_by(Course.created_at.desc())
     elif sort == "price_asc":
         db_query = db_query.order_by(Course.price_from.asc())
     elif sort == "price_desc":
         db_query = db_query.order_by(Course.price_from.desc())
-    else:  # popular по умолчанию
+    else:  # "popular" по умолчанию
         db_query = db_query.order_by(Course.clicks.desc())
     
-    # Пагинация
-    per_page = 9
+    # ПАГИНАЦИЯ
+    per_page = 9  # Курсов на странице
     total_courses = db_query.count()
-    total_pages = (total_courses + per_page - 1) // per_page
+    total_pages = (total_courses + per_page - 1) // per_page if total_courses > 0 else 1
     page = max(1, min(page, total_pages))
     
-    courses = db_query.offset((page - 1) * per_page).limit(per_page).all()
+    # Получаем курсы для текущей страницы
+    offset = (page - 1) * per_page
+    courses = db_query.offset(offset).limit(per_page).all()
+    
+    # Получаем уникальные категории для фильтра
+    categories = db.query(Course.category_slug).filter(Course.is_published == True).distinct().all()
+    categories = [c[0] for c in categories if c[0]]
     
     return templates.TemplateResponse("courses.html", {
         "request": request,
         "courses": courses,
+        "current_query": query,
         "current_category": category,
         "current_level": level,
         "current_format": format,
         "current_price_min": price_min,
         "current_price_max": price_max,
         "current_sort": sort,
-        "current_query": query,
         "current_page": page,
         "total_pages": total_pages,
-        "total_courses": total_courses
+        "total_courses": total_courses,
+        "available_categories": categories,
+        "price_range": {
+            "min": db.query(func.min(Course.price_from)).filter(Course.is_published == True).scalar() or 0,
+            "max": db.query(func.max(Course.price_from)).filter(Course.is_published == True).scalar() or 100000
+        }
     })
 
 @app.get("/category/{category_slug}", response_class=HTMLResponse)
