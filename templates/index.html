@@ -7,5 +7,16 @@
     <a href="/courses" class="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700">
         Смотреть все курсы
     </a>
+
+    {% if courses %}
+    <div class="mt-8 max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-4">
+        {% for c in courses %}
+        <div class="bg-white p-4 rounded shadow">
+            <h3 class="font-semibold"><a href="/course/{{ c.slug }}" class="hover:underline">{{ c.title }}</a></h3>
+            <p class="text-sm text-gray-600">{{ c.short_desc }}</p>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
 </div>
 {% endblock %}
