@@ -24,3 +24,18 @@
     </main>
 </body>
 </html>
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Каталог курсов по нейросетям{% endblock %}</title>
+    <meta name="description" content="{% block description %}Найдите лучшие курсы по AI, машинному обучению и нейросетям.{% endblock %}">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body class="bg-gray-50">
+    <!-- Навигация и т.д. -->
+    {% block content %}{% endblock %}
+</body>
+</html>
