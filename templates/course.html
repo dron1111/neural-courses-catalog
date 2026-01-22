@@ -4,13 +4,6 @@
 {% block description %}{{ course.short_desc }}{% endblock %}
 
 {% block content %}
-<!-- ваш существующий код -->
-{% endblock %}
-{% extends "base.html" %}
-
-{% block title %}{{ course.title }} — Каталог курсов{% endblock %}
-
-{% block content %}
 <div class="max-w-4xl mx-auto">
     <div class="bg-white rounded-lg shadow-lg p-8">
         <div class="mb-6">
@@ -24,15 +17,15 @@
                 {{ course.format }}
             </span>
         </div>
-
+        
         <h1 class="text-3xl font-bold mb-4">{{ course.title }}</h1>
         <p class="text-gray-600 mb-6">Провайдер: {{ course.provider }}</p>
-
+        
         <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
             <div>
                 <h3 class="text-xl font-semibold mb-4">О курсе</h3>
                 <p class="text-gray-700 mb-4">{{ course.short_desc }}</p>
-
+                
                 <div class="mb-4">
                     <h4 class="font-semibold mb-2">Теги:</h4>
                     <div class="flex flex-wrap gap-2">
@@ -46,7 +39,7 @@
                     </div>
                 </div>
             </div>
-
+            
             <div class="bg-blue-50 p-6 rounded-lg">
                 <h3 class="text-xl font-semibold mb-4">Детали курса</h3>
                 <div class="space-y-3">
@@ -67,14 +60,14 @@
                         <span class="font-medium">{{ course.clicks }}</span>
                     </div>
                 </div>
-
+                
                 <a href="/out/{{ course.slug }}" class="mt-6 block w-full bg-blue-600 text-white text-center py-3 rounded-lg hover:bg-blue-700 font-semibold text-lg">
                     Перейти на обучение
                 </a>
                 <p class="text-center text-gray-500 text-sm mt-2">Кликов: {{ course.clicks }}</p>
             </div>
         </div>
-
+        
         <a href="/courses" class="text-blue-600 hover:text-blue-800">← Вернуться к каталогу</a>
     </div>
 </div>
