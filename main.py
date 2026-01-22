@@ -7,7 +7,10 @@ import sqlite3
 import os
 
 app = FastAPI(title="Каталог курсов по нейросетям")
-
+from routers import admin, courses, out
+app.include_router(admin.router, prefix="/admin")
+app.include_router(courses.router, prefix="/api/courses")
+app.include_router(out.router, prefix="/out")
 # Создаем таблицы в БД (если их нет) через SQLAlchemy
 Base.metadata.create_all(bind=engine)
 
