@@ -2,6 +2,7 @@ from fastapi import FastAPI, Request, Depends, Form, Query, HTTPException
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
+from sqlalchemy.pool import StaticPool
 from sqlalchemy.orm import Session
 from sqlalchemy import create_engine, Column, Integer, String, Boolean, DateTime, Text
 from sqlalchemy.ext.declarative import declarative_base
@@ -17,7 +18,17 @@ DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./courses.db")
 if DATABASE_URL and DATABASE_URL.startswith("postgres://"):
     DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
 
-engine = create_engine(DATABASE_URL)
+# ДЛЯ SQLite: добавляем параметры для работы в многопоточном режиме
+if DATABASE_URL.startswith("sqlite"):
+    engine = create_engine(
+        DATABASE_URL, 
+        connect_args={"check_same_thread": False},  # Важно для SQLite + FastAPI
+        poolclass=StaticPool  # Для SQLite в многопоточном режиме
+    )
+else:
+    # Для PostgreSQL оставляем как было
+    engine = create_engine(DATABASE_URL)
+
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
