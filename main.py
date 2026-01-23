@@ -9,6 +9,8 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.sql import func
 import os
+from pydantic import Field
+from typing import Union
 from typing import Optional
 import urllib.parse
 
@@ -172,8 +174,8 @@ async def courses_list(
     category: Optional[str] = Query(None),
     level: Optional[str] = Query(None),
     format: Optional[str] = Query(None),
-    price_min: Optional[int] = Query(None),
-    price_max: Optional[int] = Query(None),
+    price_min: Union[int, None] = Field(None, ge=0)
+    price_max: Union[int, None] = Field(None, ge=0)
     sort: str = Query("popular"),
     page: int = Query(1, ge=1),
     db: Session = Depends(get_db)
