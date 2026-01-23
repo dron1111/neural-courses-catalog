@@ -1,36 +1,86 @@
 {% extends "base.html" %}
 
-{% block title %}Каталог курсов - Каталог курсов по нейросетям{% endblock %}
+{% block title %}Каталог курсов{% endblock %}
 
 {% block content %}
-<div class="max-w-6xl mx-auto grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-    {% for course in courses %}
-    <div class="bg-white rounded-lg shadow p-4">
-        <div class="mb-3">
-            <span class="inline-block bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full">
-                {{ course.category_slug }}
-            </span>
-            <span class="inline-block bg-gray-100 text-gray-800 text-xs px-2 py-1 rounded-full ml-2">
-                {{ course.level }}
-            </span>
-            <span class="inline-block bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full ml-2">
-                {{ course.format }}
-            </span>
-        </div>
-
-        <h3 class="text-lg font-semibold mb-2">
-            <a href="/course/{{ course.slug }}" class="hover:underline">{{ course.title }}</a>
-        </h3>
-
-        <p class="text-gray-600 text-sm mb-3">{{ course.short_desc }}</p>
-
-        <div class="flex items-center justify-between mt-4">
-            <div class="text-sm text-gray-700 font-medium">{{ course.price_from }} ₽</div>
-            <a href="/out/{{ course.slug }}" class="bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700 text-sm">Перейти</a>
-        </div>
+<div class="container">
+    <h1>Каталог курсов</h1>
+    
+    <div class="filter-panel">
+        <form method="get" action="/courses">
+            <div class="search-box">
+                <input type="text" name="query" placeholder="Поиск по названию, тегам..." value="{{ current_query or '' }}">
+                <button type="submit">Поиск</button>
+            </div>
+            
+            <div class="filters">
+                <select name="category">
+                    <option value="all">Все категории</option>
+                    {% for cat in available_categories %}
+                    <option value="{{ cat }}" {% if current_category == cat %}selected{% endif %}>
+                        {{ cat }}
+                    </option>
+                    {% endfor %}
+                </select>
+                
+                <select name="level">
+                    <option value="all">Все уровни</option>
+                    <option value="beginner" {% if current_level == 'beginner' %}selected{% endif %}>Начинающий</option>
+                    <option value="middle" {% if current_level == 'middle' %}selected{% endif %}>Средний</option>
+                    <option value="pro" {% if current_level == 'pro' %}selected{% endif %}>Профессионал</option>
+                </select>
+                
+                <select name="format">
+                    <option value="all">Все форматы</option>
+                    <option value="online" {% if current_format == 'online' %}selected{% endif %}>Онлайн</option>
+                    <option value="offline" {% if current_format == 'offline' %}selected{% endif %}>Офлайн</option>
+                    <option value="mixed" {% if current_format == 'mixed' %}selected{% endif %}>Смешанный</option>
+                </select>
+                
+                <input type="number" name="price_min" placeholder="Цена от" value="{{ current_price_min or '' }}">
+                <input type="number" name="price_max" placeholder="Цена до" value="{{ current_price_max or '' }}">
+                
+                <select name="sort">
+                    <option value="popular" {% if current_sort == 'popular' %}selected{% endif %}>По популярности</option>
+                    <option value="new" {% if current_sort == 'new' %}selected{% endif %}>Новые</option>
+                    <option value="price_asc" {% if current_sort == 'price_asc' %}selected{% endif %}>Дешевле</option>
+                    <option value="price_desc" {% if current_sort == 'price_desc' %}selected{% endif %}>Дороже</option>
+                </select>
+                
+                <button type="submit">Применить</button>
+                <a href="/courses" class="btn">Сбросить</a>
+            </div>
+        </form>
     </div>
-    {% else %}
-    <p>Курсов не найдено.</p>
-    {% endfor %}
+    
+    <p>Найдено курсов: {{ total_courses }}</p>
+    
+    <div class="courses-grid">
+        {% for course in courses %}
+        <div class="course-card">
+            <h3><a href="/course/{{ course.slug }}">{{ course.title }}</a></h3>
+            <p class="provider">{{ course.provider }}</p>
+            <p class="price">от {{ course.price_from }} ₽</p>
+            <p class="level">{{ course.level }}</p>
+            <p class="category">{{ course.category_slug }}</p>
+            <p class="clicks">👁 {{ course.clicks }} просмотров</p>
+            <a href="/course/{{ course.slug }}" class="btn">Подробнее</a>
+        </div>
+        {% endfor %}
+    </div>
+    
+    {% if total_pages > 1 %}
+    <div class="pagination">
+        {% if current_page > 1 %}
+        <a href="?page={{ current_page-1 }}&query={{ current_query }}&category={{ current_category }}&level={{ current_level }}&format={{ current_format }}&price_min={{ current_price_min }}&price_max={{ current_price_max }}&sort={{ current_sort }}">←</a>
+        {% endif %}
+        
+        <span>Страница {{ current_page }} из {{ total_pages }}</span>
+        
+        {% if current_page < total_pages %}
+        <a href="?page={{ current_page+1 }}&query={{ current_query }}&category={{ current_category }}&level={{ current_level }}&format={{ current_format }}&price_min={{ current_price_min }}&price_max={{ current_price_max }}&sort={{ current_sort }}">→</a>
+        {% endif %}
+    </div>
+    {% endif %}
 </div>
 {% endblock %}
