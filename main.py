@@ -174,8 +174,8 @@ async def courses_list(
     category: Optional[str] = Query(None),
     level: Optional[str] = Query(None),
     format: Optional[str] = Query(None),
-    price_min: Optional[int] = Query(None)
-    price_max: Optional[int] = Query(None)
+    price_min: Optional[int] = Query(None),
+    price_max: Optional[int] = Query(None),
     sort: str = Query("popular"),
     page: int = Query(1, ge=1),
     db: Session = Depends(get_db)
