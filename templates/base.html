@@ -16,7 +16,7 @@
                 <div class="space-x-4">
                     <a href="/" class="text-gray-700 hover:text-blue-600">Главная</a>
                     <a href="/courses" class="text-gray-700 hover:text-blue-600">Каталог</a>
-                    <!-- Добавьте эту строку для быстрого доступа к админке -->
+                    
                     <a href="/admin/courses?token=secret-admin-token-123" class="text-gray-700 hover:text-blue-600">Админка</a>
                 </div>
             </div>
@@ -26,5 +26,8 @@
     <main class="container mx-auto px-4 py-8">
         {% block content %}{% endblock %}
     </main>
-</body>
+    
+    
+    <script src="/static/js/filters.js"></script>
+</body>   
 </html>
